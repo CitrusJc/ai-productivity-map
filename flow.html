@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI赋能企业经营管理——三层生长架构</title>
+  <style>
+    :root {
+      --bg-deep: #020817;
+      --cyan-bright: #00e5ff;
+      --cyan-accent: #38bdf8;
+      --blue-core: #0284c7;
+      --text-white: #ffffff;
+      --text-body: #e2e8f0;
+      --text-muted: #94a3b8;
+      --card-glass: rgba(6, 20, 48, 0.74);
+      --card-focus: rgba(7, 26, 64, 0.84);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #01040c;
+      overflow: hidden;
+      font-family: "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: #01040c;
+    }
+
+    /* 严格 1920x1080（16:9） */
+    #slide {
+      width: 1920px;
+      height: 1080px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      overflow: hidden;
+      transform-origin: center center;
+      transform: translate(-50%, -50%) scale(1);
+      background: #020817;
+      color: var(--text-white);
+      padding: 22px 52px 20px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 0 80px rgba(0, 0, 0, 0.9);
+    }
+
+    #stage-bg-canvas,
+    #stage-fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      pointer-events: none;
+    }
+    #stage-bg-canvas { z-index: 1; }
+    #stage-fx-canvas { z-index: 4; }
+
+    .content-layer {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+    }
+
+    /* 0. 顶部主标题 */
+    .header {
+      text-align: center;
+    }
+
+    .main-title {
+      font-size: 50px; /* >=40pt */
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #ffffff;
+      text-shadow: 0 0 36px rgba(0, 229, 255, 0.48), 0 4px 16px rgba(0, 0, 0, 0.7);
+      line-height: 1.15;
+    }
+
+    .sub-title {
+      margin-top: 6px;
+      font-size: 23px;
+      font-weight: 600;
+      color: var(--cyan-accent);
+      letter-spacing: 1.2px;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+
+    /* 通用层级标签 */
+    .layer-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--cyan-bright);
+      background: rgba(0, 229, 255, 0.14);
+      border: 1px solid rgba(0, 229, 255, 0.5);
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       第三层（顶层·枝叶成果）：基于平台长出来的应用与协同
+       ============================================================ */
+    .layer3-row {
+      display: grid;
+      grid-template-columns: 0.92fr 28px 1.08fr;
+      align-items: stretch;
+    }
+
+    .growth-card {
+      position: relative;
+      background: rgba(8, 30, 74, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(0, 229, 255, 0.55);
+      border-radius: 16px;
+      padding: 14px 22px 16px 22px;
+      box-shadow:
+        0 0 36px rgba(0, 229, 255, 0.15),
+        inset 0 0 24px rgba(56, 189, 248, 0.10);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .growth-card::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 20%;
+      right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan-bright), transparent);
+      box-shadow: 0 0 14px var(--cyan-bright);
+    }
+
+    .growth-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .growth-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .growth-title {
+      font-size: 25px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 1px;
+    }
+
+    /* 协同与督办 2大核心卡片 */
+    .collab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .collab-item {
+      background: rgba(4, 16, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.36);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: inset 0 0 14px rgba(0, 229, 255, 0.08);
+    }
+
+    .collab-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: rgba(0, 229, 255, 0.14);
+      border: 1px solid rgba(0, 229, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan-bright);
+    }
+
+    .collab-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .collab-name {
+      font-size: 22px; /* >=16pt */
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .collab-sub {
+      font-size: 16px;
+      color: var(--cyan-accent);
+    }
+
+    /* 典型高频场景 4大应用 */
+    .scenes-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .scene-pill {
+      background: rgba(4, 16, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      border-radius: 10px;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      box-shadow: inset 0 0 14px rgba(0, 229, 255, 0.08);
+    }
+
+    .scene-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--cyan-bright);
+    }
+
+    .scene-name {
+      font-size: 22px; /* >=16pt */
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .scene-sub {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       层间生长/滋养流光带（漏斗收束与展开区）
+       ============================================================ */
+    .stream-zone {
+      position: relative;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes chevronRise {
+      0%, 100% { opacity: 0.28; transform: translateY(2px); }
+      50% { opacity: 1; transform: translateY(-2px); }
+    }
+
+    .stream-pill {
+      position: relative;
+      z-index: 3;
+      padding: 4px 22px;
+      border-radius: 999px;
+      background: rgba(3, 14, 38, 0.92);
+      border: 1px solid rgba(0, 229, 255, 0.6);
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.28);
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chev-stack {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0;
+    }
+    .chev-1 { animation: chevronRise 1.5s ease-in-out infinite 0.3s; }
+    .chev-2 { animation: chevronRise 1.5s ease-in-out infinite 0s; margin-top: -5px; }
+
+    /* ============================================================
+       第二层（中层·漏斗蜂腰核心枢纽）：中原智企平台
+       ============================================================ */
+    @keyframes platformBreathing {
+      0%, 100% {
+        box-shadow:
+          0 0 42px rgba(0, 229, 255, 0.20),
+          inset 0 0 28px rgba(56, 189, 248, 0.12),
+          0 16px 36px rgba(0, 0, 0, 0.48);
+        border-color: rgba(0, 229, 255, 0.62);
+      }
+      50% {
+        box-shadow:
+          0 0 70px rgba(0, 229, 255, 0.38),
+          inset 0 0 44px rgba(0, 229, 255, 0.22),
+          0 16px 36px rgba(0, 0, 0, 0.48);
+        border-color: rgba(0, 229, 255, 0.95);
+      }
+    }
+
+    @keyframes sheenSweep {
+      0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+      20% { opacity: 0.42; }
+      60% { opacity: 0.42; }
+      100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+    }
+
+    .layer2-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+
+    .layer2-card {
+      width: 1360px; /* 收窄成漏斗蜂腰（约为两侧层的75%） */
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background: var(--card-focus);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(0, 229, 255, 0.65);
+      border-radius: 20px;
+      padding: 13px 24px 15px 24px;
+      animation: platformBreathing 4.2s ease-in-out infinite;
+    }
+
+    /* 顶部聚焦光束线 */
+    .layer2-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 16%;
+      right: 16%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan-bright), transparent);
+      box-shadow: 0 0 16px var(--cyan-bright);
+    }
+
+    .layer2-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 30%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.09), rgba(255, 255, 255, 0.05), transparent);
+      pointer-events: none;
+      animation: sheenSweep 6.5s ease-in-out infinite;
+    }
+
+    .layer2-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 11px;
+      position: relative;
+      z-index: 2;
+      gap: 12px;
+    }
+
+    .layer2-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .layer2-title {
+      font-size: 29px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 1.8px;
+      text-shadow: 0 0 22px rgba(0, 229, 255, 0.65);
+      white-space: nowrap;
+    }
+
+    .layer2-quote {
+      font-size: 17px;
+      color: var(--text-body);
+      padding-left: 12px;
+      border-left: 3px solid var(--cyan-bright);
+      white-space: nowrap;
+    }
+
+    /* 4列横向能力底座 */
+    .platform-4grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .cap-box {
+      background: rgba(4, 15, 38, 0.74);
+      border: 1px solid rgba(56, 189, 248, 0.36);
+      border-radius: 12px;
+      padding: 11px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: inset 0 0 16px rgba(14, 165, 233, 0.09);
+    }
+
+    .cap-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .cap-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: rgba(0, 229, 255, 0.14);
+      border: 1px solid rgba(0, 229, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan-bright);
+    }
+
+    .cap-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+
+    .cap-desc {
+      font-size: 17.5px;
+      color: var(--text-body);
+      line-height: 1.32;
+    }
+
+    /* ============================================================
+       第一层（底层·根基）：流程重塑 & 数据筑基
+       ============================================================ */
+    .layer1-row {
+      display: grid;
+      grid-template-columns: 1fr 44px 1fr;
+      align-items: stretch;
+    }
+
+    .base-card {
+      position: relative;
+      background: var(--card-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.48);
+      border-radius: 16px;
+      padding: 0 22px 14px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      box-shadow:
+        inset 0 0 24px rgba(14, 165, 233, 0.12),
+        0 14px 36px rgba(0, 0, 0, 0.48);
+    }
+
+    .base-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 20%;
+      right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan-bright), transparent);
+      box-shadow: 0 0 12px var(--cyan-bright);
+    }
+
+    .base-banner {
+      margin: 0 -22px;
+      padding: 10px 22px;
+      background: linear-gradient(90deg, rgba(2, 132, 199, 0.16), rgba(0, 229, 255, 0.25), rgba(2, 132, 199, 0.16));
+      border-bottom: 1px solid rgba(56, 189, 248, 0.36);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .base-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .base-title {
+      font-size: 25px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 1px;
+    }
+
+    .base-role {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--cyan-accent);
+    }
+
+    .pillars-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .pillar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 2px 6px;
+      position: relative;
+    }
+
+    .pillar-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 10%;
+      bottom: 10%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.38), transparent);
+    }
+
+    .pillar-icon {
+      margin-bottom: 6px;
+      color: var(--cyan-bright);
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.5));
+    }
+
+    .pillar-title {
+      font-size: 20px; /* >=16pt */
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.22;
+    }
+
+    .pillar-sub {
+      margin-top: 2px;
+      font-size: 18px;
+      color: var(--text-body);
+      line-height: 1.22;
+    }
+
+    .base-summary {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 18px;
+      color: var(--cyan-accent);
+      font-weight: 500;
+    }
+
+    .data-chips-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .data-chip {
+      padding: 4px 18px;
+      border-radius: 8px;
+      background: rgba(2, 132, 199, 0.24);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      font-size: 19px; /* >=14pt */
+      color: #ffffff;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+
+    @keyframes numGlow {
+      0%, 100% { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+      50% { text-shadow: 0 0 22px rgba(0, 229, 255, 0.95); }
+    }
+
+    .num-highlight {
+      color: var(--cyan-bright);
+      font-weight: 800;
+      font-size: 25px;
+      animation: numGlow 3.2s ease-in-out infinite;
+    }
+
+    .chip-slash {
+      color: rgba(56, 189, 248, 0.55);
+      font-size: 20px;
+    }
+
+    .bridge-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.7));
+    }
+
+    /* ============================================================
+       最底部：政绩与治理实效落点
+       ============================================================ */
+    .footer-bar {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .footer-lead {
+      flex: 0 0 420px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(6, 26, 62, 0.9), rgba(10, 48, 96, 0.85));
+      border: 1px solid rgba(56, 189, 248, 0.52);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 1px;
+    }
+
+    .outcome-grid {
+      flex: 1;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .outcome-card {
+      height: 100%;
+      border-radius: 10px;
+      background: rgba(6, 22, 54, 0.86);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 0 14px rgba(14, 165, 233, 0.16);
+    }
+
+    .outcome-title {
+      font-size: 21px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .outcome-sub {
+      font-size: 16px;
+      color: var(--cyan-accent);
+    }
+
+    @media print {
+      @page {
+        size: 1920px 1080px;
+        margin: 0;
+      }
+      body, #viewport {
+        width: 1920px;
+        height: 1080px;
+      }
+      #slide {
+        left: 0;
+        top: 0;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="slide">
+      <canvas id="stage-bg-canvas" width="1920" height="1080"></canvas>
+      <canvas id="stage-fx-canvas" width="1920" height="1080"></canvas>
+
+      <div class="content-layer">
+        <!-- 0. 顶部定调 -->
+        <header class="header">
+          <h1 class="main-title">以流程摸清业务  以数据沉淀能力  以平台打造“智企”</h1>
+          <div class="sub-title">先做全集团业务流程梳理定准需求，再盘活现有信息系统筑牢底座，最终统建安全可控的企业级AI平台</div>
+        </header>
+
+        <!-- 第三层（果·顶层生长层）：基于平台长出来的应用与协同 -->
+        <section class="layer3-row">
+          <!-- 左：协同与督办 -->
+          <div class="growth-card" id="layer3-collab">
+            <div class="growth-header">
+              <div class="growth-title-group">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                <h2 class="growth-title">协同与督办</h2>
+              </div>
+              <span class="layer-tag">第三层 · 平台生长应用</span>
+            </div>
+
+            <div class="collab-grid">
+              <div class="collab-item">
+                <div class="collab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <div class="collab-text">
+                  <div class="collab-name">多智能体协同闭环</div>
+                  <div class="collab-sub">任务自动拆解 · 动态分工协作</div>
+                </div>
+              </div>
+
+              <div class="collab-item">
+                <div class="collab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </div>
+                <div class="collab-text">
+                  <div class="collab-name">集团AI生产力与数字员工总览</div>
+                  <div class="collab-sub">成果全景呈现 · 状态实时督办</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div></div>
+
+          <!-- 右：典型高频场景 -->
+          <div class="growth-card" id="layer3-scenes">
+            <div class="growth-header">
+              <div class="growth-title-group">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <h2 class="growth-title">典型高频场景</h2>
+              </div>
+              <span class="layer-tag">第三层 · 业务即开即用</span>
+            </div>
+
+            <div class="scenes-grid">
+              <div class="scene-pill">
+                <div class="scene-top">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line></svg>
+                  <span class="scene-name">订单解析</span>
+                </div>
+                <span class="scene-sub">要素自动识别提取</span>
+              </div>
+              <div class="scene-pill">
+                <div class="scene-top">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+                  <span class="scene-name">合同审查</span>
+                </div>
+                <span class="scene-sub">合规风险智能预警</span>
+              </div>
+              <div class="scene-pill">
+                <div class="scene-top">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  <span class="scene-name">公文写作</span>
+                </div>
+                <span class="scene-sub">规范起草高效成稿</span>
+              </div>
+              <div class="scene-pill">
+                <div class="scene-top">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <span class="scene-name">校对助手</span>
+                </div>
+                <span class="scene-sub">涉政错敏一键核校</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 中→上生长动线（从窄腰向外展开） -->
+        <div class="stream-zone">
+          <div class="stream-pill">
+            <span class="chev-stack">
+              <svg class="chev-1" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="chev-2" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span>基于平台能力向上生长，全面赋能业务协同与高频刚需场景</span>
+            <span class="chev-stack">
+              <svg class="chev-1" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="chev-2" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- 第二层（干·漏斗蜂腰核心枢纽）：中原智企平台 -->
+        <div class="layer2-wrapper">
+          <section class="layer2-card" id="layer2-platform">
+            <div class="layer2-header">
+              <div class="layer2-title-group">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(0,229,255,0.85));">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" fill="rgba(0,229,255,0.25)"></polygon>
+                  <polyline points="2 12 12 17 22 12"></polyline>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                </svg>
+                <h2 class="layer2-title">中原智企平台</h2>
+                <span class="layer-tag">第二层 · 统一承载层（统筹统建 · 自主可控）</span>
+              </div>
+              <div class="layer2-quote">统一AI入口，纳管多方平台，实现用得上、管得住、安全可控</div>
+            </div>
+
+            <div class="platform-4grid">
+              <div class="cap-box">
+                <div class="cap-head">
+                  <div class="cap-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                  </div>
+                  <div class="cap-title">统一AI入口</div>
+                </div>
+                <div class="cap-desc">集成办公门户，按权限统一发现、调用与管理全域智能体</div>
+              </div>
+
+              <div class="cap-box">
+                <div class="cap-head">
+                  <div class="cap-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                  </div>
+                  <div class="cap-title">模型自主可控调度</div>
+                </div>
+                <div class="cap-desc">依托自有算力统管 GLM、DeepSeek 等模型，按需调度不绑定</div>
+              </div>
+
+              <div class="cap-box">
+                <div class="cap-head">
+                  <div class="cap-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                  </div>
+                  <div class="cap-title">开发编排双路径</div>
+                </div>
+                <div class="cap-desc">低代码（面向业务）+ 高代码（面向研发）统一纳管一键跳转</div>
+              </div>
+
+              <div class="cap-box">
+                <div class="cap-head">
+                  <div class="cap-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                  </div>
+                  <div class="cap-title">全链运营安全治理</div>
+                </div>
+                <div class="cap-desc">运行全程监控、算力成本可归集、数据权限严格可管控</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 下→中滋养动线（从宽底座向内汇聚） -->
+        <div class="stream-zone">
+          <div class="stream-pill">
+            <span class="chev-stack">
+              <svg class="chev-1" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="chev-2" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span>流程与数据持续向上滋养，夯实“中原智企”统一平台能力</span>
+            <span class="chev-stack">
+              <svg class="chev-1" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="chev-2" width="16" height="9" viewBox="0 0 16 10" fill="none"><path d="M2 8L8 2L14 8" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- 第一层（根·起点与底座）：01 流程重塑 -> 02 数据筑基 -->
+        <section class="layer1-row">
+          <div class="base-card" id="base-left">
+            <div>
+              <div class="base-banner">
+                <div class="base-title-group">
+                  <span class="layer-tag">第一层 · 起点</span>
+                  <h3 class="base-title">流程重塑</h3>
+                </div>
+                <span class="base-role">先回答“AI做什么”，不盲目上技术</span>
+              </div>
+
+              <div class="pillars-grid">
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">全集团盘点</div>
+                  <div class="pillar-sub">查堵点断点</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">制度对齐</div>
+                  <div class="pillar-sub">权责显性化</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">流程标准化</div>
+                  <div class="pillar-sub">统一地图口径</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">场景遴选</div>
+                  <div class="pillar-sub">高价值清单</div>
+                </div>
+              </div>
+
+              <div class="base-summary">摸清全集团业务家底，沉淀流程地图、规则口径与任务清单</div>
+            </div>
+
+            <div class="data-chips-row">
+              <div class="data-chip"><span class="num-highlight">168</span><span>项 L3 流程</span></div>
+              <span class="chip-slash">/</span>
+              <div class="data-chip"><span class="num-highlight">84</span><span>份制度文件</span></div>
+              <span class="chip-slash">/</span>
+              <div class="data-chip"><span class="num-highlight">81</span><span>个 KCP</span></div>
+            </div>
+          </div>
+
+          <div class="bridge-arrow">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#00E5FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="base-card" id="base-right">
+            <div>
+              <div class="base-banner">
+                <div class="base-title-group">
+                  <span class="layer-tag">第一层 · 底座</span>
+                  <h3 class="base-title">数据筑基</h3>
+                </div>
+                <span class="base-role">盘活存量，让数据“读得懂、信得过”</span>
+              </div>
+
+              <div class="pillars-grid">
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">打通</div>
+                  <div class="pillar-sub">破孤岛统口径</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">治理</div>
+                  <div class="pillar-sub">质量血缘可溯</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">知识化</div>
+                  <div class="pillar-sub">沉淀可检知识</div>
+                </div>
+                <div class="pillar-item">
+                  <div class="pillar-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                  </div>
+                  <div class="pillar-title">本体化</div>
+                  <div class="pillar-sub">业务语义建模</div>
+                </div>
+              </div>
+
+              <div class="base-summary">依托 40 套业务系统，汇集流程、制度与审批数据，形成可信可用底座</div>
+            </div>
+
+            <div class="data-chips-row">
+              <div class="data-chip"><span class="num-highlight">40</span><span>套业务系统</span></div>
+              <span class="chip-slash">/</span>
+              <div class="data-chip"><span class="num-highlight">9000万+</span><span>条数据</span></div>
+              <span class="chip-slash">/</span>
+              <div class="data-chip"><span class="num-highlight">1000+</span><span>个数据模型</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 底部：经营与治理实效落点 -->
+        <footer class="footer-bar">
+          <div class="footer-lead">三层贯通最终治理与经营实效 ➜</div>
+          <div class="outcome-grid">
+            <div class="outcome-card">
+              <span class="outcome-title">规则清晰</span>
+              <span class="outcome-sub">权责边界明</span>
+            </div>
+            <div class="outcome-card">
+              <span class="outcome-title">数据可信</span>
+              <span class="outcome-sub">家底口径清</span>
+            </div>
+            <div class="outcome-card">
+              <span class="outcome-title">智能可用</span>
+              <span class="outcome-sub">业务真增效</span>
+            </div>
+            <div class="outcome-card">
+              <span class="outcome-title">管理升级</span>
+              <span class="outcome-sub">统管防风险</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const slideEl = document.getElementById('slide');
+
+    // 1. 严格 16:9 居中适配
+    function fitSlide() {
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const vh = document.documentElement.clientHeight || window.innerHeight;
+      const scale = Math.min(vw / 1920, vh / 1080);
+      slideEl.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    fitSlide();
+    window.addEventListener('DOMContentLoaded', fitSlide);
+    window.addEventListener('load', fitSlide);
+    window.addEventListener('resize', fitSlide);
+    if (window.ResizeObserver) {
+      new ResizeObserver(fitSlide).observe(document.documentElement);
+    }
+
+    function getSlideRect(el) {
+      const sRect = slideEl.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      const scale = sRect.width / 1920;
+      return {
+        left: (eRect.left - sRect.left) / scale,
+        right: (eRect.right - sRect.left) / scale,
+        top: (eRect.top - sRect.top) / scale,
+        bottom: (eRect.bottom - sRect.top) / scale,
+        cx: (eRect.left + eRect.width / 2 - sRect.left) / scale,
+        cy: (eRect.top + eRect.height / 2 - sRect.top) / scale,
+        w: eRect.width / scale,
+        h: eRect.height / scale
+      };
+    }
+
+    // 2. 静态舞台底图（点亮上方两角极光 + 中腰聚焦光晕）
+    (function drawStaticBg() {
+      const canvas = document.getElementById('stage-bg-canvas');
+      const ctx = canvas.getContext('2d');
+      const W = 1920, H = 1080;
+
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, '#030d24');
+      bgGrad.addColorStop(0.45, '#061a42');
+      bgGrad.addColorStop(0.85, '#041230');
+      bgGrad.addColorStop(1, '#020715');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      // 左上角与右上角钴蓝极光底晕
+      const tlGlow = ctx.createRadialGradient(140, 100, 10, 180, 130, 560);
+      tlGlow.addColorStop(0, 'rgba(0, 210, 255, 0.24)');
+      tlGlow.addColorStop(0.45, 'rgba(14, 165, 233, 0.12)');
+      tlGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = tlGlow;
+      ctx.fillRect(0, 0, 800, 700);
+
+      const trGlow = ctx.createRadialGradient(1780, 100, 10, 1740, 130, 560);
+      trGlow.addColorStop(0, 'rgba(0, 210, 255, 0.24)');
+      trGlow.addColorStop(0.45, 'rgba(14, 165, 233, 0.12)');
+      trGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = trGlow;
+      ctx.fillRect(1120, 0, 800, 700);
+
+      // 中层蜂腰平台聚光
+      const coreGlow = ctx.createRadialGradient(960, 470, 20, 960, 470, 720);
+      coreGlow.addColorStop(0, 'rgba(0, 229, 255, 0.24)');
+      coreGlow.addColorStop(0.45, 'rgba(14, 165, 233, 0.09)');
+      coreGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = coreGlow;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.04)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= W; x += 64) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y <= H; y += 64) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    })();
+
+    // 3. 实时动态层：
+    //    (1) 第一层 -> 第二层：宽底座向窄腰收敛滋养光流（6股）
+    //    (2) 第二层 -> 第三层：窄腰向上舒展生长光束（6股）
+    //    (3) 上方两角星云节点 + 光纤脉冲弧
+    (function drawLiveEffects() {
+      const canvas = document.getElementById('stage-fx-canvas');
+      const ctx = canvas.getContext('2d');
+      const W = 1920, H = 1080;
+
+      function bezierPoint(p0, p1, p2, p3, t) {
+        const u = 1 - t;
+        return {
+          x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+          y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y
+        };
+      }
+
+      // 角落星云节点
+      const cornerNodes = [];
+      for (let i = 0; i < 36; i++) {
+        const isLeft = i < 18;
+        cornerNodes.push({
+          side: isLeft ? 'L' : 'R',
+          x: isLeft ? (16 + Math.random() * 360) : (1544 + Math.random() * 360),
+          y: 16 + Math.random() * 280,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35,
+          r: 1.6 + Math.random() * 2.2,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      const cornerArcs = [
+        { p0: {x: -20, y: 60},  p1: {x: 150, y: 100}, p2: {x: 230, y: 190}, p3: {x: 250, y: 310}, t: 0.1, speed: 0.0055 },
+        { p0: {x: 130, y: -20}, p1: {x: 210, y: 95},  p2: {x: 280, y: 180}, p3: {x: 330, y: 280}, t: 0.6, speed: 0.0045 },
+        { p0: {x: 1940, y: 60}, p1: {x: 1770, y: 100}, p2: {x: 1690, y: 190}, p3: {x: 1670, y: 310}, t: 0.3, speed: 0.0055 },
+        { p0: {x: 1790, y: -20}, p1: {x: 1710, y: 95}, p2: {x: 1640, y: 180}, p3: {x: 1590, y: 280}, t: 0.8, speed: 0.0045 }
+      ];
+
+      // 下->中 滋养粒子
+      const nourishOrbs = [];
+      for (let lane = 0; lane < 6; lane++) {
+        for (let k = 0; k < 5; k++) {
+          nourishOrbs.push({ lane, t: k / 5 + Math.random() * 0.1, speed: 0.006 + Math.random() * 0.003, size: 2.2 + Math.random() * 2.0 });
+        }
+      }
+
+      // 中->上 生长粒子
+      const growthOrbs = [];
+      for (let lane = 0; lane < 6; lane++) {
+        for (let k = 0; k < 5; k++) {
+          growthOrbs.push({ lane, t: k / 5 + Math.random() * 0.1, speed: 0.0065 + Math.random() * 0.003, size: 2.2 + Math.random() * 2.0 });
+        }
+      }
+
+      // 全屏缓慢升腾微光粒子
+      const risingMotes = [];
+      for (let i = 0; i < 65; i++) {
+        risingMotes.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: 0.8 + Math.random() * 1.9,
+          vy: -(0.3 + Math.random() * 0.55),
+          alpha: 0.18 + Math.random() * 0.5,
+          sway: Math.random() * Math.PI * 2
+        });
+      }
+
+      function computePaths() {
+        const l3Collab = getSlideRect(document.getElementById('layer3-collab'));
+        const l3Scenes = getSlideRect(document.getElementById('layer3-scenes'));
+        const l2Plat   = getSlideRect(document.getElementById('layer2-platform'));
+        const l1Left   = getSlideRect(document.getElementById('base-left'));
+        const l1Right  = getSlideRect(document.getElementById('base-right'));
+
+        // 第一层 -> 第二层（宽底座向窄腰平台平滑汇聚）
+        const nourish = [
+          { p0: {x: l1Left.left + l1Left.w * 0.16, y: l1Left.top + 6},   p1: {x: l1Left.left + l1Left.w * 0.22, y: l1Left.top - 32},   p2: {x: l2Plat.left + l2Plat.w * 0.10, y: l2Plat.bottom + 32}, p3: {x: l2Plat.left + l2Plat.w * 0.14, y: l2Plat.bottom - 2} },
+          { p0: {x: l1Left.left + l1Left.w * 0.45, y: l1Left.top + 6},   p1: {x: l1Left.left + l1Left.w * 0.48, y: l1Left.top - 28},   p2: {x: l2Plat.left + l2Plat.w * 0.28, y: l2Plat.bottom + 28}, p3: {x: l2Plat.left + l2Plat.w * 0.30, y: l2Plat.bottom - 2} },
+          { p0: {x: l1Left.left + l1Left.w * 0.76, y: l1Left.top + 6},   p1: {x: l1Left.left + l1Left.w * 0.78, y: l1Left.top - 24},   p2: {x: l2Plat.cx - 80, y: l2Plat.bottom + 24},                 p3: {x: l2Plat.cx - 65, y: l2Plat.bottom - 2} },
+          { p0: {x: l1Right.left + l1Right.w * 0.84, y: l1Right.top + 6}, p1: {x: l1Right.left + l1Right.w * 0.78, y: l1Right.top - 32}, p2: {x: l2Plat.left + l2Plat.w * 0.90, y: l2Plat.bottom + 32}, p3: {x: l2Plat.left + l2Plat.w * 0.86, y: l2Plat.bottom - 2} },
+          { p0: {x: l1Right.left + l1Right.w * 0.55, y: l1Right.top + 6}, p1: {x: l1Right.left + l1Right.w * 0.52, y: l1Right.top - 28}, p2: {x: l2Plat.left + l2Plat.w * 0.72, y: l2Plat.bottom + 28}, p3: {x: l2Plat.left + l2Plat.w * 0.70, y: l2Plat.bottom - 2} },
+          { p0: {x: l1Right.left + l1Right.w * 0.24, y: l1Right.top + 6}, p1: {x: l1Right.left + l1Right.w * 0.22, y: l1Right.top - 24}, p2: {x: l2Plat.cx + 80, y: l2Plat.bottom + 24},                 p3: {x: l2Plat.cx + 65, y: l2Plat.bottom - 2} }
+        ];
+
+        // 第二层 -> 第三层（从窄腰平台向上分叉展开至应用层）
+        const growth = [
+          { p0: {x: l2Plat.left + l2Plat.w * 0.14, y: l2Plat.top + 4}, p1: {x: l2Plat.left + l2Plat.w * 0.10, y: l2Plat.top - 28}, p2: {x: l3Collab.left + l3Collab.w * 0.18, y: l3Collab.bottom + 28}, p3: {x: l3Collab.left + l3Collab.w * 0.16, y: l3Collab.bottom - 2} },
+          { p0: {x: l2Plat.left + l2Plat.w * 0.30, y: l2Plat.top + 4}, p1: {x: l2Plat.left + l2Plat.w * 0.28, y: l2Plat.top - 26}, p2: {x: l3Collab.left + l3Collab.w * 0.48, y: l3Collab.bottom + 26}, p3: {x: l3Collab.left + l3Collab.w * 0.48, y: l3Collab.bottom - 2} },
+          { p0: {x: l2Plat.cx - 65, y: l2Plat.top + 4},                p1: {x: l2Plat.cx - 78, y: l2Plat.top - 24},                p2: {x: l3Collab.left + l3Collab.w * 0.80, y: l3Collab.bottom + 24}, p3: {x: l3Collab.left + l3Collab.w * 0.82, y: l3Collab.bottom - 2} },
+          { p0: {x: l2Plat.cx + 65, y: l2Plat.top + 4},                p1: {x: l2Plat.cx + 78, y: l2Plat.top - 24},                p2: {x: l3Scenes.left + l3Scenes.w * 0.20, y: l3Scenes.bottom + 24}, p3: {x: l3Scenes.left + l3Scenes.w * 0.18, y: l3Scenes.bottom - 2} },
+          { p0: {x: l2Plat.left + l2Plat.w * 0.70, y: l2Plat.top + 4}, p1: {x: l2Plat.left + l2Plat.w * 0.72, y: l2Plat.top - 26}, p2: {x: l3Scenes.left + l3Scenes.w * 0.52, y: l3Scenes.bottom + 26}, p3: {x: l3Scenes.left + l3Scenes.w * 0.52, y: l3Scenes.bottom - 2} },
+          { p0: {x: l2Plat.left + l2Plat.w * 0.86, y: l2Plat.top + 4}, p1: {x: l2Plat.left + l2Plat.w * 0.90, y: l2Plat.top - 28}, p2: {x: l3Scenes.left + l3Scenes.w * 0.82, y: l3Scenes.bottom + 28}, p3: {x: l3Scenes.left + l3Scenes.w * 0.84, y: l3Scenes.bottom - 2} }
+        ];
+
+        return { nourish, growth };
+      }
+
+      function drawStreamSet(paths, orbs) {
+        for (const path of paths) {
+          const grad = ctx.createLinearGradient(path.p0.x, path.p0.y, path.p3.x, path.p3.y);
+          grad.addColorStop(0, 'rgba(2, 132, 199, 0.25)');
+          grad.addColorStop(0.5, 'rgba(56, 189, 248, 0.58)');
+          grad.addColorStop(1, 'rgba(0, 229, 255, 0.95)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2.1;
+          ctx.beginPath();
+          ctx.moveTo(path.p0.x, path.p0.y);
+          ctx.bezierCurveTo(path.p1.x, path.p1.y, path.p2.x, path.p2.y, path.p3.x, path.p3.y);
+          ctx.stroke();
+        }
+
+        for (const orb of orbs) {
+          orb.t += orb.speed;
+          if (orb.t > 1) orb.t = 0;
+
+          const path = paths[orb.lane];
+          for (let tail = 0; tail < 7; tail++) {
+            const tt = orb.t - tail * 0.025;
+            if (tt < 0 || tt > 1) continue;
+            const pt = bezierPoint(path.p0, path.p1, path.p2, path.p3, tt);
+            const fade = (1 - tail / 7) * Math.sin(orb.t * Math.PI);
+            ctx.fillStyle = tail === 0
+              ? `rgba(224, 242, 254, ${Math.min(1, fade * 1.25)})`
+              : `rgba(0, 229, 255, ${fade * 0.85})`;
+            if (tail === 0) {
+              ctx.shadowBlur = 14;
+              ctx.shadowColor = '#00E5FF';
+            } else {
+              ctx.shadowBlur = 0;
+            }
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, Math.max(0.8, orb.size - tail * 0.28), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      let time = 0;
+
+      function render() {
+        time += 0.025;
+        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        // 1) 上方两角呼吸极光脉冲
+        const cornerPulse = 0.09 + 0.06 * Math.sin(time * 0.9);
+        for (const cx of [140, 1780]) {
+          const cg = ctx.createRadialGradient(cx, 80, 5, cx, 80, 420);
+          cg.addColorStop(0, `rgba(0, 229, 255, ${cornerPulse})`);
+          cg.addColorStop(0.5, `rgba(56, 189, 248, ${cornerPulse * 0.45})`);
+          cg.addColorStop(1, 'transparent');
+          ctx.fillStyle = cg;
+          ctx.beginPath();
+          ctx.arc(cx, 80, 420, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 2) 上方两角动态星云与光纤脉冲
+        for (let i = 0; i < cornerNodes.length; i++) {
+          const n = cornerNodes[i];
+          n.x += n.vx;
+          n.y += n.vy;
+          n.phase += 0.04;
+
+          if (n.side === 'L' && (n.x < 10 || n.x > 400)) n.vx *= -1;
+          if (n.side === 'R' && (n.x < 1520 || n.x > 1910)) n.vx *= -1;
+          if (n.y < 12 || n.y > 310) n.vy *= -1;
+
+          for (let j = i + 1; j < cornerNodes.length; j++) {
+            const m = cornerNodes[j];
+            if (n.side !== m.side) continue;
+            const d = Math.hypot(n.x - m.x, n.y - m.y);
+            if (d < 145) {
+              ctx.strokeStyle = `rgba(56, 189, 248, ${(1 - d / 145) * 0.4})`;
+              ctx.lineWidth = 1.1;
+              ctx.beginPath();
+              ctx.moveTo(n.x, n.y);
+              ctx.lineTo(m.x, m.y);
+              ctx.stroke();
+            }
+          }
+
+          ctx.fillStyle = `rgba(0, 229, 255, ${0.5 + 0.45 * Math.sin(n.phase)})`;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#00E5FF';
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        for (const arc of cornerArcs) {
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(arc.p0.x, arc.p0.y);
+          ctx.bezierCurveTo(arc.p1.x, arc.p1.y, arc.p2.x, arc.p2.y, arc.p3.x, arc.p3.y);
+          ctx.stroke();
+
+          arc.t += arc.speed;
+          if (arc.t > 1) arc.t = 0;
+          for (let s = 0; s < 6; s++) {
+            const tt = Math.max(0, arc.t - s * 0.024);
+            const pt = bezierPoint(arc.p0, arc.p1, arc.p2, arc.p3, tt);
+            const a = (1 - s / 6) * Math.sin(arc.t * Math.PI) * 0.9;
+            ctx.fillStyle = `rgba(0, 229, 255, ${a})`;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 2.8 - s * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // 3) 自下而上的两级能量传递
+        const { nourish, growth } = computePaths();
+        drawStreamSet(nourish, nourishOrbs);
+        drawStreamSet(growth, growthOrbs);
+
+        // 4) 全屏向上升腾微光粒子
+        for (const m of risingMotes) {
+          m.y += m.vy;
+          m.sway += 0.03;
+          m.x += Math.sin(m.sway) * 0.18;
+          if (m.y < -15) {
+            m.y = H + 15;
+            m.x = Math.random() * W;
+          }
+          ctx.fillStyle = `rgba(186, 230, 253, ${m.alpha})`;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+        requestAnimationFrame(render);
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
