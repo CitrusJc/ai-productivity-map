@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI生产力地图 · 企业AI化成果全景大屏</title>
+<link rel="icon" href="assets/logo.png">
+<style>
+:root{
+  --bg0:#04070F; --bg1:#071126; --bg2:#0A1830;
+  --panel:rgba(9,22,44,.68); --panel2:rgba(13,30,58,.55);
+  --line:rgba(94,182,255,.16); --line2:rgba(94,182,255,.34);
+  --cyan:#22D3EE; --blue:#38BDF8; --violet:#818CF8;
+  --green:#34D399; --amber:#FBBF24; --rose:#FB7185;
+  --t1:#E7F2FF; --t2:#93A9CC; --t3:#5E81AB;
+  --font:"Source Han Sans CN","Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;
+  --num:"Bahnschrift","DIN Alternate","Segoe UI",var(--font);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0)}
+body{
+  font-family:var(--font);color:var(--t1);
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(34,211,238,.10), transparent 60%),
+    radial-gradient(900px 420px at 88% 110%, rgba(129,140,248,.08), transparent 60%),
+    linear-gradient(180deg,var(--bg1),var(--bg0) 65%);
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(148,190,255,.09) 1px, transparent 1.4px);
+  background-size:34px 34px;
+  mask-image:radial-gradient(1200px 800px at 50% 30%, #000 30%, transparent 100%);
+}
+body::after{
+  content:"";position:fixed;top:0;left:0;right:0;height:2px;z-index:30;
+  background:linear-gradient(90deg,transparent,var(--cyan) 30%,var(--violet) 70%,transparent);
+  opacity:.7;
+}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;overflow:hidden}
+#board{
+  position:relative;width:1920px;height:1080px;transform-origin:center center;
+  flex:0 0 auto;
+  will-change:transform;
+  display:grid;grid-template-rows:96px 130px 1fr 236px;gap:14px;
+  /* TV overscan 安全区 ≈ 5% */
+  padding:48px 96px 48px;
+}
+/* ============ 面板通用 ============ */
+.panel{
+  position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;
+}
+.panel::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);opacity:.55;
+}
+.panel .p-h{
+  position:relative;display:flex;align-items:center;gap:10px;padding:12px 16px 8px;height:52px;
+}
+.panel .p-h .tag{
+  width:4px;height:16px;border-radius:2px;background:linear-gradient(180deg,var(--cyan),var(--violet));
+}
+.panel .p-h h3{font-size:22px;font-weight:600;letter-spacing:2px;color:var(--t1)}
+.panel .p-h .sub{margin-left:auto;font-size:14px;color:var(--t3);letter-spacing:1px}
+.panel .p-b{padding:4px 16px 14px}
+/* ============ 顶部标题栏 ============ */
+#header{display:flex;align-items:center;gap:26px;padding:0 10px}
+.logo{display:flex;align-items:center;gap:16px;min-width:380px}
+.logo-mark{
+  width:60px;height:60px;border-radius:14px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line2);background:rgba(9,22,44,.55);
+}
+.logo-mark img{
+  width:100%;height:100%;object-fit:contain;border-radius:13px;display:block;
+}
+.logo .t1{font-size:38px;font-weight:700;letter-spacing:6px;line-height:1.15;
+  background:linear-gradient(92deg,#fff,var(--cyan) 45%,var(--violet));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.logo .t2{font-size:15px;color:var(--t2);letter-spacing:3px;margin-top:3px}
+#header .mid{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:10px;
+  font-size:15px;color:var(--t3);letter-spacing:2px;
+}
+#header .mid .act{color:var(--t2)}
+#header .mid .sep{opacity:.45}
+#header .mid .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 10px var(--green);animation:pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+#header .right{display:flex;align-items:center;gap:22px;min-width:400px;justify-content:flex-end}
+.clock{text-align:right}
+.clock .tm{font-family:var(--num);font-size:36px;font-weight:700;letter-spacing:2px;color:var(--t1);line-height:1;font-variant-numeric:tabular-nums}
+.clock .dt{font-size:13px;color:var(--t3);margin-top:5px;letter-spacing:1px}
+.badge{
+  font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid rgba(52,211,153,.45);
+  color:var(--green);letter-spacing:1px;white-space:nowrap;
+}
+/* ============ KPI 指标带 · 家底→运转→价值 ============ */
+#kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.kpi{
+  position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+}
+.kpi::after{
+  content:"";position:absolute;left:0;bottom:0;width:38px;height:2px;
+  background:var(--blue);opacity:.6;
+}
+.kpi.act-value::after{background:var(--green)}
+.kpi.act-run::after{background:var(--cyan)}
+.kpi .act-tag{
+  position:absolute;top:8px;right:12px;font-size:11px;letter-spacing:1px;color:var(--t3);opacity:.85;
+}
+.kpi .lab{font-size:14px;color:var(--t2);letter-spacing:2px;display:flex;align-items:center;gap:8px}
+.kpi .lab i{
+  width:6px;height:6px;border-radius:2px;transform:rotate(45deg);background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);
+}
+.kpi .val{
+  font-family:var(--num);font-size:40px;font-weight:700;letter-spacing:1px;margin-top:6px;line-height:1;
+  color:var(--t1);font-variant-numeric:tabular-nums;
+}
+.kpi .val em{font-style:normal;font-size:16px;font-weight:500;color:var(--t2);margin-left:4px}
+.kpi .val .grad{
+  background:linear-gradient(92deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.kpi .sub{font-size:13px;color:var(--t3);margin-top:7px;letter-spacing:1px}
+.kpi .sub b{color:var(--green);font-weight:600}
+.kpi .sub b.am{color:var(--amber)}
+/* ============ 中部三栏 ============ */
+#main{display:grid;grid-template-columns:352px 1fr 372px;gap:14px;min-height:0}
+#plats{display:flex;flex-direction:column}
+#plats .p-b{flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;padding-top:8px;padding-bottom:10px}
+.layer-label{display:flex;align-items:center;gap:8px;font-size:13px;letter-spacing:2px;color:var(--t2);padding:1px 2px 0}
+.layer-label i{width:7px;height:7px;border-radius:2px;transform:rotate(45deg);flex:none}
+.layer-label span{flex:1;height:1px;background:linear-gradient(90deg,rgba(94,182,255,.28),transparent)}
+.plat{
+  flex:1;display:flex;align-items:center;gap:11px;padding:6px 12px;
+  background:rgba(8,20,40,.55);border:1px solid rgba(94,182,255,.12);border-radius:8px;
+  position:relative;overflow:hidden;min-height:0;
+}
+.plat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);opacity:.85}
+.plat.l-cyan::before{background:var(--cyan)}
+.plat.l-violet::before{background:var(--violet)}
+.plat .ic{
+  width:40px;height:40px;flex:none;border-radius:9px;
+  background:linear-gradient(135deg,rgba(56,189,248,.16),rgba(56,189,248,.06));
+  border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--blue);
+}
+.plat.l-cyan .ic{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(56,189,248,.08));color:var(--cyan)}
+.plat.l-violet .ic{background:linear-gradient(135deg,rgba(129,140,248,.20),rgba(56,189,248,.08));color:var(--violet)}
+.plat .bd{min-width:0;flex:1}
+.plat .nm{font-size:18px;font-weight:600;color:var(--t1);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plat .st{font-size:11px;padding:2px 9px;border-radius:12px;letter-spacing:1px;flex:none}
+.plat .st.ok{background:rgba(52,211,153,.14);color:var(--green);border:1px solid rgba(52,211,153,.35)}
+.plat .st.run{background:rgba(251,191,36,.13);color:var(--amber);border:1px solid rgba(251,191,36,.35)}
+.plat .ds{font-size:13px;color:var(--t2);margin-top:3px;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plat .ds b{font-family:var(--num);font-size:14px;color:var(--blue);font-weight:600}
+.plat.l-cyan .ds b{color:var(--cyan)}
+.plat.l-violet .ds b{color:var(--violet)}
+/* 中央：全景图（边界对齐 + 画布动效） */
+#mapwrap{display:flex;flex-direction:column;min-width:0}
+#mapwrap .p-h .note{margin-left:auto;font-size:13px;color:var(--t3);letter-spacing:1px}
+#mapwrap .p-b{flex:1;min-height:0;position:relative;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;padding:0 4px 4px}
+#mapwrap svg{width:100%;height:100%;max-height:none}
+.map-node text{font-family:var(--font);fill:var(--t1);text-anchor:middle}
+.map-node .nm{font-size:19px;font-weight:700}
+.map-node .ds{font-size:14px;fill:var(--t3)}
+.center-node .nm{font-size:22px;font-weight:700}
+.center-node .ds{font-size:14px;fill:var(--t2)}
+.scene{opacity:.55;transition:opacity .45s var(--ease-out)}
+.scene text{font-size:15px;fill:var(--t2);font-weight:500}
+.scene.hit{opacity:.9}
+.scene.hit circle{fill:#22D3EE}
+.scene.hit text{fill:#E7F2FF}
+.scene.on{opacity:1}
+.scene.on circle{fill:var(--cyan)}
+.scene.on text{fill:var(--t1);font-weight:700}
+.flowline{stroke-dasharray:6 10;animation:dashflow 2.6s linear infinite}
+.flowline.slow{animation-duration:3.6s}
+@keyframes dashflow{to{stroke-dashoffset:-32}}
+.node-pulse{transform-box:fill-box;transform-origin:center;animation:np 2.4s ease-in-out infinite}
+@keyframes np{0%,100%{opacity:1}50%{opacity:.55}}
+.cycle-label{font-size:16px;fill:var(--cyan);letter-spacing:3px;opacity:.55;font-weight:700}
+.cycle-label.on{opacity:1;fill:var(--t1)}
+.layer-tag{font-size:15px;fill:rgba(148,190,255,.65);letter-spacing:8px;font-weight:600}
+.map-frame{
+  fill:none;stroke:rgba(94,182,255,.28);stroke-width:1.4;
+  stroke-dasharray:10 14;animation:dashflow 8s linear infinite;
+}
+.map-grid line{stroke:rgba(94,182,255,.07);stroke-width:1}
+.band-active{animation:bandBreath 3.2s ease-in-out infinite}
+@keyframes bandBreath{0%,100%{opacity:.35}50%{opacity:.85}}
+.scene-beam{stroke:rgba(34,211,238,.55);stroke-width:1.4;stroke-dasharray:4 8;fill:none;animation:dashflow 2.6s linear infinite;opacity:0;transition:opacity .4s}
+.scene-beam.on{opacity:1}
+.owl-guide{
+  position:absolute;right:2px;bottom:0;width:72px;z-index:6;pointer-events:none;opacity:.8;
+}
+.owl-guide img{width:100%;display:block;filter:drop-shadow(0 6px 8px rgba(6,26,60,.35))}
+/* 右侧：智能体矩阵 */
+#workers{display:flex;flex-direction:column}
+#workers .p-b{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+.w-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.w-card{background:rgba(8,20,40,.55);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
+.w-card .n{font-family:var(--num);font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.w-card.g .n{color:var(--green)}
+.w-card.a .n{color:var(--amber)}
+.w-card .l{font-size:13px;color:var(--t2);margin-top:6px;letter-spacing:1px}
+.w-lists{flex:1;display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0}
+.wl{background:rgba(8,20,40,.5);border:1px solid rgba(94,182,255,.12);border-radius:8px;padding:8px 0 0;display:flex;flex-direction:column;min-height:0}
+.wl .wl-h{display:flex;align-items:center;gap:8px;padding:0 12px 7px;font-size:13px;color:var(--t2);letter-spacing:1px}
+.wl .wl-h i{width:7px;height:7px;border-radius:50%}
+.wl.g .wl-h i{background:var(--green);box-shadow:0 0 8px var(--green)}
+.wl.a .wl-h i{background:var(--amber)}
+.wl .wl-h b{font-family:var(--num);color:var(--t1)}
+.wl .scr{flex:1;overflow:hidden;position:relative;min-height:0}
+.wl .scr .in{transition:transform .7s var(--ease-out)}
+.w-row{display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:13.5px;color:var(--t1);height:40px}
+.w-row .w-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.w-row .w-dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.w-row .w-dot.bd{background:var(--amber)}
+.w-row .w-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-row .w-dp{font-size:12px;color:var(--t3);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-row .w-st{font-size:11px;flex:none}
+.w-row .w-st.on{color:var(--green)}
+.w-row .w-st.bd{color:var(--amber)}
+/* ============ 底部三栏（强制等高） ============ */
+#bottom{
+  display:grid;grid-template-columns:1.05fr .9fr .86fr;gap:14px;
+  min-height:0;height:100%;align-items:stretch;
+}
+#bottom > .panel{
+  display:flex;flex-direction:column;min-height:0;height:100%;
+  align-self:stretch;
+}
+#bottom > .panel .p-h{flex:none}
+#bottom > .panel .p-b{
+  flex:1;min-height:0;display:flex;flex-direction:column;
+  padding:2px 16px 12px;
+}
+.chart-box{position:relative;flex:1;min-height:0;width:100%;height:auto}
+.gauges{
+  flex:1;min-height:0;display:flex;flex-direction:column;
+  justify-content:space-between;gap:0;padding:2px 0 0;
+}
+.gauge{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.gauge .g-t{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--t2);letter-spacing:1px;margin-bottom:4px}
+.gauge .g-t b{font-family:var(--num);font-size:20px;color:var(--t1);font-weight:700;font-variant-numeric:tabular-nums}
+.gauge .g-t b em{font-style:normal;font-size:13px;color:var(--cyan)}
+.gauge .bar{height:8px;border-radius:6px;background:rgba(94,182,255,.12);overflow:hidden;position:relative;flex:none}
+.gauge .bar i{
+  display:block;height:100%;width:100%;border-radius:6px;
+  background:linear-gradient(90deg,rgba(34,211,238,.5),var(--cyan));
+  transform-origin:left center;transform:scaleX(var(--p,0));
+  animation:grow 1.6s var(--ease-out) both;
+}
+.gauge.v .bar i{background:linear-gradient(90deg,rgba(129,140,248,.5),var(--violet))}
+.gauge.g .bar i{background:linear-gradient(90deg,rgba(52,211,153,.5),var(--green))}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(var(--p,1))}}
+/* ============ 首屏入场（单次 ≤600ms） ============ */
+#board.enter #header,
+#board.enter .kpi,
+#board.enter #plats,
+#board.enter #mapwrap,
+#board.enter #workers,
+#board.enter #bottom > .panel{
+  animation:enterReveal .55s var(--ease-out) both;
+}
+#board.enter #header{animation-delay:0ms}
+#board.enter .kpi:nth-child(1){animation-delay:40ms}
+#board.enter .kpi:nth-child(2){animation-delay:80ms}
+#board.enter .kpi:nth-child(3){animation-delay:120ms}
+#board.enter .kpi:nth-child(4){animation-delay:160ms}
+#board.enter .kpi:nth-child(5){animation-delay:200ms}
+#board.enter .kpi:nth-child(6){animation-delay:240ms}
+#board.enter #plats{animation-delay:280ms}
+#board.enter #mapwrap{animation-delay:320ms}
+#board.enter #workers{animation-delay:360ms}
+#board.enter #bottom > .panel:nth-child(1){animation-delay:400ms}
+#board.enter #bottom > .panel:nth-child(2){animation-delay:440ms}
+#board.enter #bottom > .panel:nth-child(3){animation-delay:480ms}
+@keyframes enterReveal{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  #board.enter #header,
+  #board.enter .kpi,
+  #board.enter #plats,
+  #board.enter #mapwrap,
+  #board.enter #workers,
+  #board.enter #bottom > .panel{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="board" class="enter">
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <header id="header">
+    <div class="logo">
+      <div class="logo-mark"><img src="assets/logo.png" alt="豫信电科"></div>
+      <div>
+        <div class="t1">AI生产力地图</div>
+        <div class="t2">豫信电科 · 企业人工智能化成果全景 · 数字员工运营总览</div>
+      </div>
+    </div>
+    <div class="mid">
+      <span class="dot"></span>
+      <span class="act">家底</span><span class="sep">→</span>
+      <span class="act">运转</span><span class="sep">→</span>
+      <span class="act">价值</span>
+      <span class="sep">·</span>
+      <span>统一纳管 · 场景渗透 · 价值度量</span>
+    </div>
+    <div class="right">
+      <span class="badge">数据截至 2026-11-20</span>
+      <div class="clock">
+        <div class="tm" id="clk">--:--:--</div>
+        <div class="dt" id="dat">----年--月--日 周-</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== KPI：家底 → 运转 → 价值（6 项） ===== -->
+  <section id="kpis">
+    <div class="kpi act-base"><span class="act-tag">家底</span>
+      <div class="lab"><i></i>数字员工总数</div>
+      <div class="val"><span class="grad">19</span><em>个</em></div>
+      <div class="sub">已上线 <b>9</b> · 规划中 <b class="am">10</b></div></div>
+    <div class="kpi act-base"><span class="act-tag">家底</span>
+      <div class="lab"><i></i>智能体应用</div>
+      <div class="val">9<em>个</em></div>
+      <div class="sub">覆盖 <b>5</b> 个业务场景</div></div>
+    <div class="kpi act-base"><span class="act-tag">家底</span>
+      <div class="lab"><i></i>覆盖业务场景</div>
+      <div class="val">5<em>类</em></div>
+      <div class="sub">办公协同 · 人力资源 · 风控审计 · 生产经营 · 投资管理</div></div>
+    <div class="kpi act-run"><span class="act-tag">运转</span>
+      <div class="lab"><i></i>模型月调用量</div>
+      <div class="val"><span class="grad">382</span><em>万次</em></div>
+      <div class="sub">日峰值 <b>1.68</b> 万次</div></div>
+    <div class="kpi act-run"><span class="act-tag">运转</span>
+      <div class="lab"><i></i>知识库文档规模</div>
+      <div class="val">1.56<em>万篇</em></div>
+      <div class="sub">知识库 <b>12</b> 个 · 持续沉淀</div></div>
+    <div class="kpi act-value"><span class="act-tag">价值</span>
+      <div class="lab"><i></i>累计节省工时</div>
+      <div class="val"><span class="grad">860</span><em>小时</em></div>
+      <div class="sub">折合人力约 <b>41</b> 人年</div></div>
+  </section>
+
+  <!-- ===== 中部三栏 ===== -->
+  <main id="main">
+
+    <section class="panel" id="plats">
+      <div class="p-h"><span class="tag"></span><h3>AI平台体系</h3><span class="sub">四层架构 · 六平台纳管</span></div>
+      <div class="p-b">
+        <div class="layer-label"><i style="background:var(--blue)"></i>底座层 · 能力基座<span></span></div>
+        <div class="plat">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <div class="bd"><div class="nm">知识库平台</div>
+            <div class="ds"><b>12</b> 库 · <b>1.56</b> 万篇文档</div></div>
+          <span class="st ok">已就绪</span>
+        </div>
+        <div class="plat">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.5v11L12 22l-8-4.5v-11z"/><path d="M4 6.5l8 4.5 8-4.5M12 11v11"/></svg></div>
+          <div class="bd"><div class="nm">MaaS 大模型服务</div>
+            <div class="ds"><b>8</b> 模型 · 日调 <b>0.76</b> 万次</div></div>
+          <span class="st ok">已就绪</span>
+        </div>
+        <div class="plat">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3.5V11c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5.5z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg></div>
+          <div class="bd"><div class="nm">大模型安全防护</div>
+            <div class="ds">累计拦截 <b>238</b> 次风险请求</div></div>
+          <span class="st run">试运行</span>
+        </div>
+        <div class="layer-label"><i style="background:var(--cyan)"></i>生产层 · 数字员工工厂<span></span></div>
+        <div class="plat l-cyan">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 2.4L17 4l.4 2.6L20 9l-1.6 2.1.6 2.9-2.6.9-1.4 2.2-2.9-.4-2 1.9L7 17l-1.2-2.4-2.6-.9.5-2.9L2 9l2.6-2.4L5 4l2.6-.6z"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+          <div class="bd"><div class="nm">智能体开发平台</div>
+            <div class="ds">已建设 <b>9</b> · 规划 <b>10</b> 个</div></div>
+          <span class="st ok">已就绪</span>
+        </div>
+        <div class="layer-label"><i style="background:var(--cyan)"></i>调度层 · 总前台 · 总调度<span></span></div>
+        <div class="plat l-cyan">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="12" r="2.4"/><circle cx="18.5" cy="5.5" r="2.4"/><circle cx="18.5" cy="18.5" r="2.4"/><path d="M7.8 10.8L16.2 6.8M7.8 13.2l8.4 4.4"/></svg></div>
+          <div class="bd"><div class="nm">意图识别与调度平台</div>
+            <div class="ds">日派单 <b>860</b>  · 准确率 <b>96%</b></div></div>
+          <span class="st run">试运行</span>
+        </div>
+        <div class="layer-label"><i style="background:var(--violet)"></i>交互层 · 人与 AI 协作<span></span></div>
+        <div class="plat l-violet">
+          <div class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg></div>
+          <div class="bd"><div class="nm">个人助理</div>
+            <div class="ds">每人一位 · 全员推广中</div></div>
+          <span class="st run">推广中</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="mapwrap">
+      <div class="p-h"><span class="tag"></span><h3>AI生产力全景图</h3>
+        <span class="note">听 → 派 → 干 → 报 · 主路径闭环</span></div>
+      <div class="p-b">
+        <svg id="mapSvg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="AI生产力全景图：四层边界对齐，意图识别与调度中枢连接个人助理、智能体集群与业务场景">
+          <defs>
+            <linearGradient id="gCore" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22D3EE"/><stop offset="1" stop-color="#818CF8"/>
+            </linearGradient>
+            <linearGradient id="gPlat" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#56B4F5" stop-opacity=".22"/><stop offset="1" stop-color="#56B4F5" stop-opacity=".06"/>
+            </linearGradient>
+            <linearGradient id="gCyan" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22D3EE" stop-opacity=".24"/><stop offset="1" stop-color="#22D3EE" stop-opacity=".06"/>
+            </linearGradient>
+            <linearGradient id="gVio" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#818CF8" stop-opacity=".24"/><stop offset="1" stop-color="#818CF8" stop-opacity=".06"/>
+            </linearGradient>
+            <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="7" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <clipPath id="mapClip"><rect x="36" y="6" width="928" height="588" rx="12"/></clipPath>
+          </defs>
+
+          <!-- 外框占满画布 -->
+          <g id="bands">
+            <rect class="band" data-band="0" x="36" y="6" width="928" height="147" fill="rgba(129,140,248,.055)"/>
+            <rect class="band" data-band="1" x="36" y="153" width="928" height="147" fill="rgba(34,211,238,.055)"/>
+            <rect class="band" data-band="2" x="36" y="300" width="928" height="147" fill="rgba(34,211,238,.035)"/>
+            <rect class="band" data-band="3" x="36" y="447" width="928" height="147" fill="rgba(56,189,248,.055)"/>
+          </g>
+          <g class="map-grid" clip-path="url(#mapClip)">
+            <line x1="36" y1="153" x2="964" y2="153"/>
+            <line x1="36" y1="300" x2="964" y2="300"/>
+            <line x1="36" y1="447" x2="964" y2="447"/>
+            <line x1="220" y1="6" x2="220" y2="594"/>
+            <line x1="500" y1="6" x2="500" y2="594"/>
+            <line x1="780" y1="6" x2="780" y2="594"/>
+          </g>
+          <rect class="map-frame" x="36" y="6" width="928" height="588" rx="12"/>
+
+          <g class="layer-tag">
+            <text x="14" y="80" writing-mode="tb">交互层</text>
+            <text x="14" y="227" writing-mode="tb">调度层</text>
+            <text x="14" y="374" writing-mode="tb">生产层</text>
+            <text x="14" y="521" writing-mode="tb">底座层</text>
+          </g>
+
+          <path id="sceneBeam" class="scene-beam" d="M500 227 L500 227"/>
+
+          <!-- 主流光：铺满三列 -->
+          <g fill="none">
+            <path class="flowline" stroke="rgba(34,211,238,.8)" stroke-width="2" d="M220 78 L460 210"/>
+            <path class="flowline" stroke="rgba(34,211,238,.8)" stroke-width="2" d="M220 370 L460 250"/>
+            <path class="flowline" stroke="rgba(34,211,238,.9)" stroke-width="2.4" d="M555 205 C620 160 690 120 780 78"/>
+            <path class="flowline slow" stroke="rgba(56,189,248,.5)" stroke-width="1.6" d="M500 510 L500 300"/>
+            <path class="flowline slow" stroke="rgba(56,189,248,.4)" stroke-width="1.4" d="M220 510 L220 400"/>
+            <path class="flowline slow" stroke="rgba(56,189,248,.4)" stroke-width="1.4" d="M780 510 L780 170"/>
+          </g>
+
+          <!-- 业务场景贴边：已渗透 5 类加 hit，其余为版图 -->
+          <g id="scenes">
+            <g class="scene hit" data-x="160" data-y="28"><circle cx="160" cy="28" r="5" fill="#22D3EE"/><text x="160" y="52" text-anchor="middle">办公协同</text></g>
+            <g class="scene hit" data-x="340" data-y="28"><circle cx="340" cy="28" r="5" fill="#22D3EE"/><text x="340" y="52" text-anchor="middle">人力资源</text></g>
+            <g class="scene hit" data-x="660" data-y="28"><circle cx="660" cy="28" r="5" fill="#22D3EE"/><text x="660" y="52" text-anchor="middle">风控审计</text></g>
+            <g class="scene hit" data-x="840" data-y="28"><circle cx="840" cy="28" r="5" fill="#22D3EE"/><text x="840" y="52" text-anchor="middle">生产经营</text></g>
+            <g class="scene hit" data-x="56" data-y="95"><circle cx="56" cy="95" r="5" fill="#22D3EE"/><text x="70" y="100" text-anchor="start">投资管理</text></g>
+            <g class="scene" data-x="56" data-y="227"><circle cx="56" cy="227" r="5" fill="#38BDF8"/><text x="70" y="232" text-anchor="start">战略经营</text></g>
+            <g class="scene" data-x="56" data-y="374"><circle cx="56" cy="374" r="5" fill="#38BDF8"/><text x="70" y="379" text-anchor="start">纪检监察</text></g>
+            <g class="scene" data-x="56" data-y="520"><circle cx="56" cy="520" r="5" fill="#38BDF8"/><text x="70" y="525" text-anchor="start">科创研发</text></g>
+            <g class="scene" data-x="944" data-y="95"><circle cx="944" cy="95" r="5" fill="#38BDF8"/><text x="930" y="100" text-anchor="end">市场营销</text></g>
+            <g class="scene" data-x="944" data-y="227"><circle cx="944" cy="227" r="5" fill="#38BDF8"/><text x="930" y="232" text-anchor="end">财务管理</text></g>
+            <g class="scene" data-x="944" data-y="374"><circle cx="944" cy="374" r="5" fill="#38BDF8"/><text x="930" y="379" text-anchor="end">党建党群</text></g>
+            <g class="scene" data-x="944" data-y="520"><circle cx="944" cy="520" r="5" fill="#38BDF8"/><text x="930" y="525" text-anchor="end">招标采购</text></g>
+            <g class="scene" data-x="500" data-y="28"><circle cx="500" cy="28" r="5" fill="#38BDF8"/><text x="500" y="52" text-anchor="middle">信息化治理</text></g>
+          </g>
+
+          <!-- 交互层：铺满上带 -->
+          <g class="map-node">
+            <circle cx="220" cy="78" r="36" fill="url(#gVio)" stroke="rgba(129,140,248,.9)" stroke-width="2"/>
+            <g transform="translate(205,63)" stroke="#818CF8" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="15" cy="10" r="4.5"/><path d="M4 26v-1.2a9 9 0 0 1 18 0V26"/>
+            </g>
+            <text x="220" y="132" class="nm" fill="#C7CBFF">个人助理</text>
+            <text x="220" y="152" class="ds">人找 AI · to C</text>
+          </g>
+          <g class="map-node">
+            <rect x="670" y="36" width="220" height="108" rx="16" fill="rgba(52,211,153,.06)" stroke="rgba(52,211,153,.4)" stroke-width="1.4" stroke-dasharray="5 8"/>
+            <g class="node-pulse">
+              <rect x="688" y="48" width="184" height="38" rx="19" fill="rgba(52,211,153,.14)" stroke="rgba(52,211,153,.75)" stroke-width="1.6"/>
+            </g>
+            <text x="712" y="74" font-family="var(--num)" font-size="22" font-weight="700" fill="#34D399" text-anchor="start">9</text>
+            <text x="734" y="74" font-size="15" fill="#9FEFD6" text-anchor="start">已上线 · 运行中</text>
+            <rect x="688" y="96" width="184" height="38" rx="19" fill="rgba(251,191,36,.12)" stroke="rgba(251,191,36,.6)" stroke-width="1.6"/>
+            <text x="712" y="122" font-family="var(--num)" font-size="22" font-weight="700" fill="#FBBF24" text-anchor="start">10</text>
+            <text x="748" y="122" font-size="15" fill="#FDE6AC" text-anchor="start">规划中</text>
+            <text x="780" y="168" class="nm">智能体集群</text>
+            <text x="780" y="188" class="ds">AI 找事 · to B</text>
+          </g>
+
+          <!-- 生产层 -->
+          <g class="map-node">
+            <circle cx="220" cy="370" r="34" fill="url(#gCyan)" stroke="rgba(34,211,238,.9)" stroke-width="2"/>
+            <g transform="translate(205,355)" stroke="#22D3EE" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 2l3 3 3.2-.8.5 3.2 3.2 1.8-2 2.6.8 3.6-3.2 1.1-1.7 2.8-3.6-.5-2.5 2.4-3.2-1.5-1.5-3-3.2-1.1.6-3.6-2-2.6 3.2-1.8.5-3.2 3.2.8z"/><circle cx="15" cy="15" r="4"/>
+            </g>
+            <text x="220" y="422" class="nm">智能体开发平台</text>
+            <text x="220" y="442" class="ds">数字员工工厂 · 19 体</text>
+          </g>
+
+          <!-- 底座层：三列铺满底带 -->
+          <g class="map-node">
+            <g>
+              <circle cx="220" cy="510" r="34" fill="url(#gPlat)" stroke="rgba(56,189,248,.85)" stroke-width="2"/>
+              <g transform="translate(205,495)" stroke="#38BDF8" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 24A3 3 0 0 1 8 21H25"/><path d="M8 2.5H25V27H8A3 3 0 0 1 5 24V5.5A3 3 0 0 1 8 2.5z"/>
+              </g>
+              <text x="220" y="560" class="nm">知识库平台</text>
+              <text x="220" y="580" class="ds">12 库 · 1.56 万篇</text>
+            </g>
+            <g>
+              <circle cx="500" cy="510" r="34" fill="url(#gPlat)" stroke="rgba(56,189,248,.85)" stroke-width="2"/>
+              <g transform="translate(485,495)" stroke="#38BDF8" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 2.5l10 5.5v13.5L15 27.5 5 21.5V8z"/><path d="M5 8l10 5.5L25 8M15 13.5V27.5"/>
+              </g>
+              <text x="500" y="560" class="nm">MaaS 大模型服务</text>
+              <text x="500" y="580" class="ds">8 模型 · 0.76 万次/日</text>
+            </g>
+            <g>
+              <circle cx="780" cy="510" r="34" fill="url(#gPlat)" stroke="rgba(56,189,248,.85)" stroke-width="2"/>
+              <g transform="translate(765,495)" stroke="#38BDF8" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 2.5l9 3.8v7.5c0 5.5-3.8 10-9 12-5.2-2-9-6.5-9-12V6.3z"/><path d="M10.5 14.5l3 3 6-6"/>
+              </g>
+              <text x="780" y="560" class="nm">大模型安全防护</text>
+              <text x="780" y="580" class="ds">拦截 2,38 次</text>
+            </g>
+          </g>
+
+          <!-- 调度中枢：居中放大 -->
+          <g class="map-node center-node">
+            <circle cx="500" cy="227" r="58" fill="rgba(34,211,238,.12)" stroke="url(#gCore)" stroke-width="2.6" filter="url(#glow)"/>
+            <circle class="node-pulse" cx="500" cy="227" r="74" fill="none" stroke="rgba(34,211,238,.45)" stroke-width="1.4"/>
+            <circle cx="500" cy="227" r="102" fill="none" stroke="rgba(94,182,255,.2)" stroke-width="1.2" stroke-dasharray="5 12" class="flowline slow"/>
+            <g transform="translate(482,205)" fill="none" stroke="#22D3EE" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="7" cy="15" r="3"/><circle cx="24" cy="7" r="3"/><circle cx="24" cy="23" r="3"/><path d="M9.8 13.4L21.2 8.5M9.8 16.6l11.4 5.2"/>
+            </g>
+            <text x="500" y="308" class="nm" fill="#EAF7FF" stroke="#081428" stroke-width="4" paint-order="stroke" stroke-linejoin="round">意图识别与调度</text>
+            <text x="500" y="330" class="ds" stroke="#081428" stroke-width="3.5" paint-order="stroke" stroke-linejoin="round">听懂意图 · 路由派单 · 转人工兜底</text>
+            <text class="cycle-label" data-cycle="0" x="500" y="158" text-anchor="middle">听</text>
+            <text class="cycle-label" data-cycle="1" x="580" y="234" text-anchor="start">派</text>
+            <text class="cycle-label" data-cycle="2" x="500" y="278" text-anchor="middle" fill="#34D399">干</text>
+            <text class="cycle-label" data-cycle="3" x="420" y="234" text-anchor="end" fill="#818CF8">报</text>
+          </g>
+        </svg>
+        <div class="owl-guide"><img src="assets/owl.png" alt="数字员工向导"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="workers">
+      <div class="p-h"><span class="tag"></span><h3>智能体矩阵</h3><span class="sub">已建设 9 · 规划 10</span></div>
+      <div class="p-b">
+        <div class="w-sum">
+          <div class="w-card g"><div class="n">9</div><div class="l">已建设 · 已上线</div></div>
+          <div class="w-card a"><div class="n">10</div><div class="l">规划中</div></div>
+        </div>
+        <div class="w-lists">
+          <div class="wl g">
+            <div class="wl-h"><i></i>已建设智能体 <b>9</b></div>
+            <div class="scr"><div class="in" id="wl1"></div></div>
+          </div>
+          <div class="wl a">
+            <div class="wl-h"><i></i>规划中智能体 <b>10</b></div>
+            <div class="scr"><div class="in" id="wl2"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="bottom">
+    <section class="panel">
+      <div class="p-h"><span class="tag"></span><h3>模型调用趋势</h3><span class="sub">2026年10月30日起 · 万次/日</span></div>
+      <div class="p-b"><div class="chart-box" id="trend"></div></div>
+    </section>
+    <section class="panel">
+      <div class="p-h"><span class="tag"></span><h3>业务场景AI渗透率</h3><span class="sub">13 类场景 · 自动轮播</span></div>
+      <div class="p-b"><div class="chart-box" id="scene"></div></div>
+    </section>
+    <section class="panel">
+      <div class="p-h"><span class="tag"></span><h3>价值成效</h3><span class="sub">已上线场景平均效果</span></div>
+      <div class="p-b">
+        <div class="gauges">
+          <div class="gauge"><div class="g-t">流程处理提效 <b>38<em>%</em></b></div><div class="bar"><i style="--p:.38"></i></div></div>
+          <div class="gauge g"><div class="g-t">平均响应时间缩短 <b>72<em>%</em></b></div><div class="bar"><i style="--p:.72"></i></div></div>
+          <div class="gauge v"><div class="g-t">运营成本下降 <b>26<em>%</em></b></div><div class="bar"><i style="--p:.26"></i></div></div>
+          <div class="gauge"><div class="g-t">人工差错率降低 <b>45<em>%</em></b></div><div class="bar"><i style="--p:.45"></i></div></div>
+        </div>
+      </div>
+    </section>
+  </footer>
+</div>
+</div>
+<script>
+/* ========== 屏幕自适应（基准 1920×1080） ========== */
+(function fit(){
+  var b=document.getElementById('board');
+  var W=1920, H=1080;
+  function r(){
+    var w=document.documentElement.clientWidth||window.innerWidth||W;
+    var h=document.documentElement.clientHeight||window.innerHeight||H;
+    var s=Math.min(w/W, h/H);
+    /* 0.0001 精度，避免极小数导致的模糊 */
+    s=Math.floor(s*10000)/10000;
+    if(s<=0) s=0.1;
+    b.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',r);
+  window.addEventListener('orientationchange',function(){setTimeout(r,120);});
+  document.addEventListener('visibilitychange',r);
+  r(); setTimeout(r,60);
+  /* 入场结束后移除 class，避免重复触发 */
+  setTimeout(function(){ b.classList.remove('enter'); }, 900);
+})();
+
+/* ========== 时钟 ========== */
+(function clock(){
+  var tm=document.getElementById('clk'), dt=document.getElementById('dat');
+  var wd=['日','一','二','三','四','五','六'];
+  function tick(){
+    var d=new Date(), p=function(n){return n<10?'0'+n:''+n};
+    tm.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+    dt.textContent=d.getFullYear()+'年'+p(d.getMonth()+1)+'月'+p(d.getDate())+'日 星期'+wd[d.getDay()];
+  }
+  tick(); setInterval(tick,1000);
+})();
+
+/* ========== 全景图画布动效：场景轮播 + 听派干报 + 层带呼吸 ========== */
+(function mapCanvas(){
+  var scenes=[].slice.call(document.querySelectorAll('#scenes .scene'));
+  var beam=document.getElementById('sceneBeam');
+  var cycles=[].slice.call(document.querySelectorAll('.cycle-label'));
+  var bands=[].slice.call(document.querySelectorAll('#bands .band'));
+  if(!scenes.length) return;
+  var mq=window.matchMedia('(prefers-reduced-motion: reduce)');
+  var i=0, c=0, b=0;
+  function showScene(idx){
+    scenes.forEach(function(el,n){ el.classList.toggle('on', n===idx); });
+    var s=scenes[idx], x=s.getAttribute('data-x'), y=s.getAttribute('data-y');
+    if(beam && x && y){
+      beam.setAttribute('d','M500 227 L'+x+' '+y);
+      beam.classList.add('on');
+    }
+  }
+  function showCycle(idx){
+    cycles.forEach(function(el){
+      el.classList.toggle('on', el.getAttribute('data-cycle')===String(idx));
+    });
+  }
+  function showBand(idx){
+    bands.forEach(function(el,n){
+      el.classList.toggle('band-active', n===idx);
+    });
+  }
+  showScene(0); showCycle(0); showBand(1);
+  if(mq.matches) return;
+  setInterval(function(){
+    i=(i+1)%scenes.length;
+    showScene(i);
+  },2600);
+  setInterval(function(){
+    c=(c+1)%4;
+    showCycle(c);
+  },1800);
+  setInterval(function(){
+    b=(b+1)%4;
+    showBand(b);
+  },3200);
+})();
+
+/* ========== 数字员工列表（9 已上线 / 10 规划中） ========== */
+(function workers(){
+  var on=[
+    ['会议议题申报助手','办公协同','on'],
+    ['会议纪要助手','办公协同','on'],
+    ['公文写作助手','办公协同','on'],
+    ['公文校对助手','办公协同','on'],
+    ['人才评价与人岗匹配助手','人力资源','on'],
+    ['体检报告解析助手','人力资源','on'],
+    ['合同智能辅写与审查助手','风控审计','on'],
+    ['订单解析助手','生产经营','on'],
+    ['行业研究助手','投资管理','on']
+  ];
+  var bd=[
+    ['智能问答助手','办公协同','bd'],
+    ['智能问数智能体','战略经营','bd'],
+    ['财务报告智能生成助手','财务管理','bd'],
+    ['智能客服助手','市场营销','bd'],
+    ['审计报告自动生成助手','风控审计','bd'],
+    ['流程诊断自查助手','战略经营','bd'],
+    ['投后智能分析助手','投资管理','bd'],
+    ['重点事项督办助手','办公协同','bd'],
+    ['巡察整改跟踪助手','纪检监察','bd'],
+    ['科研项目申报材料辅写','科创研发','bd']
+  ];
+  function row(a){
+    var d=document.createElement('div');
+    d.className='w-row';
+    d.innerHTML='<span class="w-dot '+(a[2]==='on'?'on':'bd')+'"></span>'+
+      '<span class="w-nm">'+a[0]+'</span><span class="w-dp">'+a[1]+'</span>'+
+      '<span class="w-st '+(a[2]==='on'?'on':'bd')+'">'+(a[2]==='on'?'在线':'规划中')+'</span>';
+    return d;
+  }
+  function build(el,list){
+    list.forEach(function(a){el.appendChild(row(a));});
+  }
+  var w1=document.getElementById('wl1'), w2=document.getElementById('wl2');
+  build(w1,on); build(w2,bd);
+  var mq=window.matchMedia('(prefers-reduced-motion: reduce)');
+  if(mq.matches) return;
+  function spin(el){
+    var first=el.firstElementChild;
+    if(!first) return;
+    el.style.transition='transform .7s cubic-bezier(.22,1,.36,1)';
+    el.style.transform='translateY(-'+first.offsetHeight+'px)';
+    setTimeout(function(){
+      el.style.transition='none'; el.style.transform='translateY(0)';
+      el.appendChild(first);
+    },720);
+  }
+  setInterval(function(){spin(w1)},2800);
+  setInterval(function(){spin(w2)},3400);
+})();
+
+/* ========== ECharts ========== */
+(function charts(){
+  function loadECharts(cb){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js';
+    s.onload=cb;
+    s.onerror=function(){
+      var s2=document.createElement('script');
+      s2.src='https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js';
+      s2.onload=cb;
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  }
+  loadECharts(function(){
+    var AX={color:'#5E81AB',fontSize:14,fontFamily:'Source Han Sans CN,Microsoft YaHei,Bahnschrift,sans-serif'},
+        splitLine={lineStyle:{color:'rgba(94,182,255,.10)'}};
+    var t=echarts.init(document.getElementById('trend'));
+    t.setOption({
+      grid:{left:56,right:26,top:26,bottom:34},
+      tooltip:{trigger:'axis',backgroundColor:'rgba(7,17,38,.92)',borderColor:'rgba(94,182,255,.35)',
+        textStyle:{color:'#E7F2FF',fontSize:13},axisPointer:{lineStyle:{color:'rgba(34,211,238,.6)'}}},
+      xAxis:{type:'category',boundaryGap:false,
+        data:['10-30','11-01','11-03','11-05','11-07','11-09','11-11','11-13','11-15','11-17','11-19'],  
+        axisLine:{lineStyle:{color:'rgba(94,182,255,.28)'}},axisLabel:AX,axisTick:{show:false}},
+      yAxis:{type:'value',name:'次',nameTextStyle:{color:'#5E81AB',fontSize:14},
+        axisLine:{show:false},axisLabel:AX,splitLine:splitLine},
+      series:[{
+        type:'line',smooth:true,symbol:'circle',symbolSize:6,
+        data:[9.5,1.2,12.8,14.1,1.58,17.6,19.8,22.1,1.48,28.6,38.2],
+        lineStyle:{width:3,color:'#22D3EE',shadowColor:'rgba(34,211,238,.35)',shadowBlur:8},
+        itemStyle:{color:'#22D3EE',borderColor:'#E7F2FF',borderWidth:1.5},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,
+          colorStops:[{offset:0,color:'rgba(34,211,238,.28)'},{offset:1,color:'rgba(34,211,238,.02)'}]}},
+        label:{show:true,position:'top',color:'#93A9CC',fontSize:13,fontFamily:'Bahnschrift,Microsoft YaHei',formatter:function(p){return p.dataIndex===11?p.value:''}}
+      }]
+    });
+    var sc=echarts.init(document.getElementById('scene'));
+    var sceneNames=['办公协同','人力资源','风控审计','生产经营','投资管理','战略经营','纪检监察','科创研发','市场营销','财务管理','党建党群','招标采购','信息化治理'];
+    var sceneVals=[56,33,28,25,20,16,13,10,7,6,3,2,2];
+    var PER=6, sWin=0, sPaused=false,
+        sReduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    sc.setOption({
+      animationDurationUpdate:700,
+      animationEasingUpdate:'cubicOut',
+      grid:{left:90,right:52,top:6,bottom:8},
+      tooltip:{trigger:'item',backgroundColor:'rgba(7,17,38,.92)',borderColor:'rgba(94,182,255,.35)',
+        textStyle:{color:'#E7F2FF',fontSize:13},formatter:function(p){return p.name+' 渗透率 '+p.value+'%'}},
+      xAxis:{type:'value',max:80,axisLabel:{show:false},splitLine:splitLine,axisLine:{show:false}},
+      yAxis:{type:'category',inverse:true,
+        data:sceneNames,
+        axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#B9CBE8',fontSize:14}},
+      dataZoom:[{type:'inside',yAxisIndex:0,startValue:0,endValue:PER-1,
+        zoomLock:true,zoomOnMouseWheel:false,moveOnWheel:false,moveOnMouseMove:false}],
+      series:[{
+        type:'bar',barWidth:14,
+        data:sceneVals,
+        itemStyle:{borderRadius:[0,7,7,0],
+          color:function(p){
+            var c=p.value>=60?'#34D399':p.value>=45?'#22D3EE':'#818CF8';
+            return {type:'linear',x:0,y:0,x2:1,y2:0,
+              colorStops:[{offset:0,color:c,opacity:.25},{offset:1,color:c}]};
+          }},
+        label:{show:true,position:'right',color:'#D7E6FF',fontSize:13,fontFamily:'Bahnschrift,Microsoft YaHei',formatter:'{c}%'}
+      }]
+    });
+    if(!sReduce){
+      var sceneBox=document.getElementById('scene');
+      sceneBox.addEventListener('mouseenter',function(){sPaused=true});
+      sceneBox.addEventListener('mouseleave',function(){sPaused=false});
+      setInterval(function(){
+        if(sPaused)return;
+        sWin=(sWin+1)%(sceneNames.length-PER+1);
+        sc.dispatchAction({type:'dataZoom',startValue:sWin,endValue:sWin+PER-1});
+      },3000);
+    }
+    window.addEventListener('resize',function(){t.resize();sc.resize();});
+    requestAnimationFrame(function(){t.resize();sc.resize();});
+    setTimeout(function(){t.resize();sc.resize();},100);
+  });
+})();
+</script>
+</body>
+</html>
